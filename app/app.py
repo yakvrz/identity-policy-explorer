@@ -220,8 +220,9 @@ def page_overview(conn, policy: str, window: TimeWindow, filters: Dict):
         with col2:
             st.subheader("Risk Distribution")
             risk_counts = sessions_df['ip_risk_level'].value_counts().reset_index()
-            fig_donut = px.pie(risk_counts, values='count', names='ip_risk_level', hole=0.4, 
-                               color='ip_risk_level', 
+            risk_counts.columns = ["risk_level", "count"]
+            fig_donut = px.pie(risk_counts, values='count', names='risk_level', hole=0.4, 
+                               color='risk_level', 
                                color_discrete_map={'high':'red', 'medium':'orange', 'low':'green'})
             st.plotly_chart(fig_donut, use_container_width=True)
 
