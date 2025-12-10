@@ -284,8 +284,8 @@ def overview_page(conn, policy: str, window: TimeWindow, filters: Dict):
         return
 
     comparison_df = policy_comparison(conn, window, filters)
-    baseline_row = comparison_df[comparison_df["policy_name"] == "lenient"]
-    baseline_row = baseline_row.iloc[0] if not baseline_row.empty else None
+    baseline_row_df = comparison_df[comparison_df["policy_name"] == "lenient"]
+    baseline_row = baseline_row_df.iloc[0] if not baseline_row_df.empty else None
     selected_row = comparison_df[comparison_df["policy_name"] == policy].iloc[0]
 
     kpis = compute_kpis(sessions_df, events_df)
@@ -366,7 +366,9 @@ def threshold_page(conn, window: TimeWindow, filters: Dict):
     render_kpi_cards(metrics)
 
     baseline_df = policy_comparison(conn, window, filters)
-    baseline_residual = baseline_df[baseline_df["policy_name"] == "lenient"]["residual_risk"].iloc[0]
+    baseline_row_df = baseline_df[baseline_df["policy_name"] == "lenient"]
+    baseline_residual = baseline_row_df["residual_risk"].iloc[0] if not baseline_row_df.empty else 0.0
+    baseline_row = baseline_row_df.iloc[0] if not baseline_row_df.empty else None
     tradeoff_df = tradeoff_curve(conn, np.arange(0.4, 0.96, 0.05), window, filters, toggles)
     tradeoff_df["risk_reduction_vs_baseline"] = baseline_residual - tradeoff_df["residual_risk"]
     tradeoff_df["score"] = tradeoff_df["risk_reduction_vs_baseline"] - tradeoff_df["mfa_prompts_per_user"] * 0.3
@@ -466,9 +468,14 @@ def session_page(conn, policy: str, window: TimeWindow, filters: Dict):
         st.write(f"Role: {detail['role']} • Device: {detail['device_type']}")
 
     events = pd.read_sql_query(
-        "SELECT event_type, created_at FROM auth_events WHERE session_id = ? ORDER BY created_at",
+        """
+        SELECT event_type, created_at
+        FROM v_events_with_policy
+        WHERE session_id = ? AND policy_name = ?
+        ORDER BY created_at
+        """,
         conn,
-        params=[selected_session],
+        params=[selected_session, policy],
         parse_dates=["created_at"],
     )
     if not events.empty:
@@ -485,6 +492,8 @@ def session_page(conn, policy: str, window: TimeWindow, filters: Dict):
         events["label"] = events["event_type"].map(label_map).fillna(events["event_type"])
         st.subheader("Events Timeline")
         st.dataframe(events[["created_at", "delta_s", "label"]], hide_index=True, use_container_width=True)
+    else:
+        st.info("No events recorded for this session/policy (possible if filtered out or blocked before events).")
 
 
 def org_page(conn, policy: str, window: TimeWindow, filters: Dict):
