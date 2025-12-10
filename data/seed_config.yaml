@@ -1,0 +1,65 @@
+random_seed: 42
+
+organizations:
+  count: 50
+  segments:
+    SMB: 0.5
+    Mid: 0.3
+    Enterprise: 0.2
+  regions:
+    NA: 0.4
+    EU: 0.25
+    APAC: 0.2
+    LATAM: 0.1
+    MEA: 0.05
+  created_months: 12
+
+users:
+  per_segment_ranges:
+    SMB: [20, 100]
+    Mid: [120, 300]
+    Enterprise: [500, 1500]
+  role_distribution:
+    admin: 0.035
+    developer: 0.14
+    employee: 0.78
+    service: 0.045
+  country_noise: 0.18
+
+sessions:
+  days: 90
+  base_logins_per_day:
+    admin: 0.28
+    developer: 0.24
+    employee: 0.16
+    service: 0.45
+  device_split:
+    desktop: 0.7
+    mobile: 0.28
+    unknown: 0.02
+  ip_risk_level:
+    low: 0.86
+    medium: 0.1
+    high: 0.04
+  high_risk_org_fraction: 0.12
+  high_risk_user_fraction: 0.08
+
+policies:
+  - policy_name: lenient
+    risk_threshold: 0.9
+    block_high_risk: false
+    mfa_for_admins: true
+    mfa_for_new_device: false
+    mfa_for_geo_change: false
+  - policy_name: balanced
+    risk_threshold: 0.7
+    block_high_risk: true
+    mfa_for_admins: true
+    mfa_for_new_device: true
+    mfa_for_geo_change: true
+  - policy_name: strict
+    risk_threshold: 0.5
+    block_high_risk: true
+    mfa_for_admins: true
+    mfa_for_new_device: true
+    mfa_for_geo_change: true
